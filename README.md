@@ -13,8 +13,8 @@ This repository provides a comprehensive guide to building a client-server web a
     - [Folder and File Details](#folder-and-file-details)
     - [Setting Up the Server](#setting-up-the-server)
 4. [Client](#client)
-5. [Deploying the Flutter Web App and Backend Using Firebase](#deployment)
-6. [Deploying the Flutter Web App and Backend Using Cloud Build](#cloudbuild)
+5. [Deploying the Flutter Web App and Backend Using Firebase](#deploying-the-flutter-web-app-and-backend-using-firebase)
+6. [Deploying the Flutter Web App and Backend Using Cloud Build](#deploying-the-flutter-web-app-and-backend-using-cloud-build--cloud-run)
 ---
 
 ## **Features**
