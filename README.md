@@ -219,3 +219,10 @@ Once the deployment finishes, Firebase CLI will show the hosting URL in the term
 Make sure the backend server is running. 
 
 ## **Deploying the Flutter Web App and Backend using Cloud Build / Cloud Run**
+
+This section requires you to have access to a GCP Project with Cloud Run API, Artifact Registry API and Cloud Run API enabled.
+
+Provided documentation :
+  - [A Complete Guide for GCP: Cloud Build](https://medium.com/@williamwarley/guide-for-gcp-cloud-build-c2ea264a7f97)
+  - [Deploy to Cloud Run with CI/CD | GCP](https://medium.com/google-cloud/deploy-to-cloud-run-with-ci-cd-gcp-5cde4692217d)
+  - [Containerize and Deploy Your First App on Cloud Run](https://medium.com/@yunandarpalilati/containerize-and-deploy-your-first-app-on-cloud-run-ab38c809b291)
