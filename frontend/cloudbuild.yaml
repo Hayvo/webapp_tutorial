@@ -1,0 +1,37 @@
+steps:
+ # Build the container image
+
+ - name: 'gcr.io/cloud-builders/gcloud'
+   entrypoint: 'bash'
+   args:
+    - '-c'
+    - |
+      echo "COMMIT SHA: latest"
+
+ - name: 'gcr.io/cloud-builders/docker'
+   args: [
+    'build', 
+    '-t', 'northamerica-northeast1-docker.pkg.dev/YOUR-PROJECT-ID/YOUR-APP-NAME/YOUR-APP-NAME-frontend:latest', 
+    '-f', './frontend/Dockerfile',
+    './']
+
+ # Push the container image to Artifact Registry
+ - name: 'gcr.io/cloud-builders/docker'
+   args: ['push', 'northamerica-northeast1-docker.pkg.dev/YOUR-PROJECT-ID/YOUR-APP-NAME/YOUR-APP-NAME-frontend:latest']
+ 
+ # Deploy container to Cloud Run
+ - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+   entrypoint: gcloud
+   args: 
+    - "run"
+    - 'deploy'
+    - 'YOUR-APP-NAME-frontend'
+    - '--image'
+    - 'northamerica-northeast1-docker.pkg.dev/YOUR-PROJECT-ID/YOUR-APP-NAME/YOUR-APP-NAME-frontend:latest'
+    - '--region'
+    - 'northamerica-northeast1'
+    - '--allow-unauthenticated'
+    - '--timeout=3600s' 
+
+options:
+  logging: CLOUD_LOGGING_ONLY  # Use Cloud Logging onlyy

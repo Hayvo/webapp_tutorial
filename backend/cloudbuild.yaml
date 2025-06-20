@@ -1,0 +1,47 @@
+steps:
+  # Step 1: Print commit SHA
+  - name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        echo "COMMIT SHA: latest"
+
+  # Step 2: Build the Docker image
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-t"
+      - "northamerica-northeast1-docker.pkg.dev/YOUR-PROJECT-ID/YOUR-APP-NAME/YOUR-APP-NAME-backend:latest"
+      - "-f"
+      - "./backend/Dockerfile"
+      - "./"
+
+  # Step 3: Push the container image to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "northamerica-northeast1-docker.pkg.dev/YOUR-PROJECT-ID/YOUR-APP-NAME/YOUR-APP-NAME-backend:latest"
+
+  # Step 4: Deploy container to Cloud Run with health check
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "YOUR-APP-NAME-backend"
+      - "--image"
+      - "northamerica-northeast1-docker.pkg.dev/YOUR-PROJECT-ID/YOUR-APP-NAME/YOUR-APP-NAME-backend:latest"
+      - "--region"
+      - "northamerica-northeast1"
+      - "--allow-unauthenticated"
+      - "--min-instances=1" # Keep the service running
+      - "--timeout=3600s" # Increase timeout if needed
+      - "--cpu=2"
+      - "--memory=8Gi"
+      - "--port=8080"
+      - "--max-instances=10"
+      - "--allow-unauthenticated"
+
+options:
+  logging: CLOUD_LOGGING_ONLY # Use Cloud Logging only
