@@ -8,7 +8,7 @@ from flask import request
 from config import Config
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, supports_credentials=True, origins=Config.ALLOWED_ORIGINS)  # Enable CORS for all routes
 app.config["JWT_SECRET_KEY"] = Config.JWT_SECRET_KEY
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = Config.JWT_ACCESS_TOKEN_EXPIRES
 app.config["SQLALCHEMY_DATABASE_URI"] = Config.SQLALCHEMY_DATABASE_URI
@@ -30,7 +30,7 @@ def add_security_headers(response):
     This function checks the request's origin and sets appropriate headers to allow CORS
     and to enforce security policies like Cross-Origin-Opener-Policy.'''
     origin = request.headers.get("Origin")
-    print(f"Origin: {origin}")
+    print(f"Request Origin: {origin}", origin in Config.ALLOWED_ORIGINS)
     if origin in Config.ALLOWED_ORIGINS:
         response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
         response.headers["Access-Control-Allow-Origin"] = origin  

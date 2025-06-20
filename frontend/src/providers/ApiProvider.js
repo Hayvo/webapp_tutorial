@@ -13,7 +13,7 @@ class ApiProvider {
         "Authorization": `Bearer ${this.accessToken}`, // ✅ Send token in headers
       },
     });
-    if (!response.ok) throw new Error("Failed to fetch shops");
+    if (!response.ok) throw new Error(`Failed to fetch users: ${response.message}`);
     const data = await response.json();
 
     return data.users || []; // Ensure we return an array

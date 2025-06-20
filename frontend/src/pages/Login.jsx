@@ -2,53 +2,56 @@ import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
-import logo from "../assets/LogoDGC.png"; // Adjust the path as necessary
+import logo from "../assets/LogoDGC.png";
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { user, setUser } = useUser();
+
   const API_URL = import.meta.env.VITE_API_URL;
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   useEffect(() => {
     if (user) {
-      console.log("User session found. Redirecting to shop selection...");
+      console.log("✅ User session found. Redirecting to /home...");
       navigate("/home");
     } else {
-        console.log("No user session found. Please log in.");
-        // Optionally, you can redirect to a different page or show a message
+      console.log("ℹ️ No user session found.");
     }
   }, [user, navigate]);
 
-  const login = async (user) => {
+  const handleLogin = async (googleToken) => {
     setLoading(true);
+    setError("");
+
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ user }),
+        credentials: "include", // to receive cookies
+        body: JSON.stringify({ id_token: googleToken }),
       });
 
-      if (!response.ok)
-        throw new Error((await response.json()).message || "Login failed");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Login failed");
+      }
 
-      const data = await response.json();
+      const { user: userData } = await response.json();
+      console.log("✅ Login successful:", userData);
 
-      console.log("Login successful:", data);
-      setUser(data.user);
+      setUser(userData);
       navigate("/home");
-    } catch (error) {
-      console.error("Login Error:", error);
-      setError("Failed to login. Please try again.");
+
+    } catch (err) {
+      console.error("❌ Login Error:", err);
+      setError(err.message || "An error occurred during login. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  console.log("Google Client ID:", clientId);
 
   return (
     <GoogleOAuthProvider clientId={clientId}>
@@ -57,26 +60,29 @@ const Login = () => {
           <img
             src={logo}
             alt="DataGem Consulting Logo"
-            className="w-50"
+            className="w-40 h-auto"
           />
+
           <h1 className="text-xl font-bold text-lightTheme-textPrimary font-montserrat">
-            Welcome to the Web App tutorial <br /> by <span className="text-lightTheme-logo"> DataGem Consulting </span>
+            Welcome to the Web App tutorial<br />
+            by <span className="text-lightTheme-logo">DataGem Consulting</span>
           </h1>
+
           <p className="text-lightTheme-textSecondary font-montserrat text-sm">
             Sign in to continue
           </p>
 
           <GoogleLogin
-            onSuccess={(credentialResponse) => {
-              if (!credentialResponse.credential) {
-                setError("No credential received");
+            onSuccess={({ credential }) => {
+              if (!credential) {
+                setError("No Google credential received");
                 return;
               }
-              login(credentialResponse);
+              handleLogin(credential);
             }}
             onError={() => {
-              console.log("Login Failed");
-              setError("Login failed. Please try again.");
+              console.error("Google Login failed");
+              setError("Google login failed. Please try again.");
             }}
           />
 
@@ -85,6 +91,7 @@ const Login = () => {
               Logging in...
             </p>
           )}
+
           {error && (
             <p className="text-lightTheme-errorRed font-montserrat text-sm">
               {error}

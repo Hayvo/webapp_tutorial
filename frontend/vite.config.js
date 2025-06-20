@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 const isDev = process.env.NODE_ENV !== "production";
 const backendUrl = isDev
   ? "http://localhost:5000" // Local backend
-  : ""; // Production backend URL can be set here if needed
+  : dotenv.config().parsed.VITE_BACKEND_PRODUCTION_URL || ""; // Production backend
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -17,7 +17,7 @@ export default defineConfig({
   assetsInclude: ["**/*.png", "**/*.jpg", "**/*.jpeg", "**/*.svg"],
   server: {
     headers: {
-      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
       "Cross-Origin-Embedder-Policy": "require-corp",
     },
     cors: {

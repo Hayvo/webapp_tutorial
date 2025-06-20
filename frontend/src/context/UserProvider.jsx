@@ -1,36 +1,51 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import Cookies from "js-cookie";
 import UserContext from "./UserContext";
-import Cookies from 'js-cookie';
+
+const COOKIE_NAME = "user";
+const COOKIE_EXPIRE_HOURS = 1;
 
 const UserProvider = ({ children }) => {
   const [user, setUserState] = useState(() => {
-    const storedUser = Cookies.get('user');
-    return storedUser ? JSON.parse(storedUser) : null;
+    try {
+      const cookieValue = Cookies.get(COOKIE_NAME);
+      return cookieValue ? JSON.parse(cookieValue) : null;
+    } catch (error) {
+      console.error("Failed to parse user cookie:", error);
+      return null;
+    }
   });
 
   const setUser = (userData) => {
     if (userData) {
-      const expiresAt = new Date().getTime() + 60 * 60 * 1000; // expires in 1 hour
-      Cookies.set('user', JSON.stringify({ user: userData, expiresAt }), { expires: 1/24 }); // expires in 1 hour
+      Cookies.set(COOKIE_NAME, JSON.stringify(userData), {
+        expires: COOKIE_EXPIRE_HOURS / 24, // Convert hours to days
+        sameSite: "Lax",
+      });
     } else {
-      Cookies.remove('user');
+      Cookies.remove(COOKIE_NAME);
     }
     setUserState(userData);
   };
 
+  // Optional: auto-expiry logic (in case client clock or tab is open >1hr)
   useEffect(() => {
-    const interval = setInterval(() => {
-      const storedUser = Cookies.get('user');
-      if (storedUser) {
-        const { expiresAt } = JSON.parse(storedUser);
-        if (new Date().getTime() > expiresAt) {
-          setUser(null);
-        }
-      }
-    }, 1000 * 60); // check every minute
+    const checkExpiry = setInterval(() => {
+      const cookieValue = Cookies.get(COOKIE_NAME);
+      if (!cookieValue) return;
 
-    return () => clearInterval(interval);
+      try {
+        const storedUser = JSON.parse(cookieValue);
+        // Optional: implement time-based expiration check here if needed
+        // e.g., setUser(null) if you manually store expiresAt
+      } catch {
+        Cookies.remove(COOKIE_NAME);
+        setUserState(null);
+      }
+    }, 1000 * 60); // every minute
+
+    return () => clearInterval(checkExpiry);
   }, []);
 
   return (

@@ -7,7 +7,7 @@ import traceback
 
 users_routes = Blueprint('users_routes', __name__)
     
-@users_routes.route('/users', methods=['GET'])
+@users_routes.route('/users', methods=['GET', 'OPTIONS'])
 @cross_origin()
 @jwt_required()
 def get_users():
@@ -16,11 +16,15 @@ def get_users():
     '''
     try:
         users = User.query.all()
+        print(f"Users retrieved: {len(users)}")
+        if not users:
+            return jsonify({"msg": "No users found"}), 404
         return jsonify({"users": [user.serialize() for user in users], "msg": "Users retrieved"}), 200
     except Exception as e:
+        traceback.print_exc()
         return jsonify({"msg": "Error getting users"}), 500
     
-@users_routes.route('/user/<id>', methods=['DELETE'])
+@users_routes.route('/users/<id>', methods=['DELETE', 'OPTIONS'])
 @cross_origin()
 @jwt_required()
 def delete_user(id):
@@ -40,7 +44,7 @@ def delete_user(id):
         traceback.print_exc()
         return jsonify({"msg": "Error deleting user"}), 500
     
-@users_routes.route('/user/<id>', methods=['PUT'])
+@users_routes.route('/users/<id>', methods=['PUT', 'OPTIONS'])
 @cross_origin()
 @jwt_required()
 def update_user(id):
@@ -59,7 +63,7 @@ def update_user(id):
         traceback.print_exc()
         return jsonify({"msg": "Error updating user"}), 500
 
-@users_routes.route('/user/<id>/increase-counter', methods=['POST'])
+@users_routes.route('/users/<id>/increase-counter', methods=['POST', 'OPTIONS'])
 @cross_origin()
 @jwt_required()
 def increase_user_counter(id):
@@ -72,7 +76,7 @@ def increase_user_counter(id):
             return jsonify({"msg": "User not found"}), 404
         user.click_counter += 1
         db.session.commit()
-        return jsonify({"msg": "User click counter increased", "user": user}), 200
+        return jsonify({"msg": "User click counter increased", "user": user.serialize()}), 200
     except Exception as e:
         traceback.print_exc()
         return jsonify({"msg": "Error increasing user click counter"}), 500

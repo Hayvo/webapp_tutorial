@@ -27,8 +27,17 @@ def verify_google_token(token):
         if idinfo['aud'] != GOOGLE_CLIENT_ID:
             raise ValueError('Token not meant for this app.')
 
+
+        user_info = {            
+            "google_id": idinfo.get("sub"),
+            "email": idinfo.get("email"),
+            "first_name": idinfo.get("given_name"),
+            "last_name": idinfo.get("family_name"),
+            "profile_picture": idinfo.get("picture"),
+            "email_verified": idinfo.get("email_verified", False)
+        }
         # Extract user information
-        return idinfo
+        return user_info
 
     except Exception as e:
         print(f"Error verifying Google token: {e}")
@@ -58,20 +67,20 @@ def login():
             return jsonify({"success": False, "error": "Missing Google ID token"}), 400
 
         user_info = verify_google_token(google_token)
-
-        if not user_info["success"]:
-            return jsonify({"status": "error", "message": user_info["error"]}), 401
-
-        # VALIDATE USER INFO
-        userExists = User.query.filter_by(google_id=user_info["sub"]).first()
-
-        if not userExists:
-            return jsonify({'status': 'error', 'message': 'User does not exist! Please sign up.'}), 401
-
+        print(f"User info: {user_info}")
         if  user_info.get("email_verified", False):
-            access_token = create_access_token(identity=user_info["user_id"])
-            user_info["access_token"] = access_token
-            return jsonify({'status': 'success', 'user': user_info,  'message': 'Login successful!'}), 200
+            # Check if the user already exists in the database
+            existing_user = User.query.filter_by(google_id=user_info["google_id"]).first()
+            if not existing_user:
+                new_user = User(**user_info)
+                db.session.add(new_user)
+                db.session.commit()
+            else:
+                new_user = existing_user
+            access_token = create_access_token(identity=user_info["google_id"])
+            _user = new_user.serialize()
+            _user["access_token"] = access_token
+            return jsonify({'status': 'success', 'user': _user,  'message': 'Login successful!'}), 200
         else:
             return jsonify({'status': 'error', 'message': 'Invalid credentials!'}), 401
 
@@ -79,50 +88,3 @@ def login():
         traceback.print_exc()
         return jsonify({'status': 'error', 'message': f'Error logging in: {e}'}), 500
     
-@login_routes.route('/register', methods=['POST'])
-@cross_origin()
-def register():
-    ''' Register endpoint that verifies Google ID token and registers a new user.
-    This endpoint expects a JSON body with an "id_token" field containing the Google ID token'''
-
-    try:
-        data = request.get_json()
-        google_token = data.get("id_token")
-
-        if not google_token:
-            return jsonify({"success": False, "error": "Missing Google ID token"}), 400
-
-        user_info = verify_google_token(google_token)
-
-        if not user_info["success"]:
-            return jsonify({"status": "error", "message": user_info["error"]}), 401
-
-        # Check if user already exists
-        userExists = User.query.filter_by(google_id=user_info["sub"]).first()
-
-        if userExists:
-            return jsonify({'status': 'error', 'message': 'User already exists! Please log in.'}), 409
-
-        # Register new user
-        new_user = {
-            "google_id": user_info["sub"],
-            "email": user_info["email"],
-            "first_name": user_info.get("given_name"),
-            "last_name": user_info.get("family_name"),
-            "profile_picture": user_info.get("picture"),
-            "click_counter": 0  
-        }
-
-        # Create a new User instance
-        user = User(**new_user)
-        db.session.add(user)
-        db.session.commit()
-
-        access_token = create_access_token(identity=user_info["sub"])
-        new_user["access_token"] = access_token
-
-        return jsonify({'status': 'success', 'user': new_user, 'message': 'Registration successful!'}), 201
-
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({'status': 'error', 'message': f'Error registering: {e}'}), 500

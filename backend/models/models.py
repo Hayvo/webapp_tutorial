@@ -9,6 +9,7 @@ class User(db.Model):
     first_name = db.Column(db.String(50), nullable=True)
     last_name = db.Column(db.String(50), nullable=True)
     profile_picture = db.Column(db.String(100), nullable=True)
+    email_verified = db.Column(db.Boolean, default=False)
     click_counter = db.Column(db.Integer, default=0)
     
     def serialize(self):
